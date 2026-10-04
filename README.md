@@ -1,0 +1,73 @@
+# colab-qwen3-coder
+
+在 Google Colab（免费 T4 GPU）上运行无审查编程模型 **Qwen3-Coder-30B-A3B-Instruct-abliterated**，并提供 OpenAI 兼容 API。
+
+## 模型
+
+- 模型：`huihui-ai/Huihui-Qwen3-Coder-30B-A3B-Instruct-abliterated`（Qwen3-Coder 底座，abliterated 去除拒答）
+- GGUF 量化：`mradermacher/Huihui-Qwen3-Coder-30B-A3B-Instruct-abliterated-i1-GGUF`
+- 默认量化 `Q3_K_M`（约 14.7GB，适配 T4 16GB 显存）；OOM 时改 `Q3_K_S`（13.3GB）
+- 30B 总参 / 3B 激活（MoE），推理速度快
+
+## 使用步骤
+
+### 1. 推送到 GitHub
+
+```bash
+cd colab-qwen3-coder
+git remote add origin https://github.com/<你的用户名>/<仓库名>.git
+git push -u origin main
+```
+
+### 2. 在 Colab 中运行
+
+打开：
+
+```
+https://colab.research.google.com/github/<你的用户名>/<仓库名>/blob/main/colab.ipynb
+```
+
+按顺序运行 notebook 单元格：
+
+1. **配置**：填 `REPO_URL`，可改 `QUANT` / `CTX`
+2. **克隆代码**：从 GitHub 拉取本仓库
+3. **安装依赖**：编译 llama-cpp-python（CUDA 版，约 5–10 分钟，只需一次）
+4. **下载模型**：从 HuggingFace 下载 GGUF（约 14GB，只下一次，之后会缓存）
+5. **启动 API 服务**：后台运行 `llama_cpp.server`
+6. **测试请求**：curl `/v1/chat/completions`
+7. **（可选）公网隧道**：cloudflared 暴露给外部访问
+
+### 3. 调用 API
+
+```bash
+curl http://127.0.0.1:8000/v1/chat/completions \
+  -H "Content-Type: application/json" \
+  -d '{"model":"local","messages":[{"role":"user","content":"hello"}]}'
+```
+
+OpenAI SDK：
+
+```python
+from openai import OpenAI
+client = OpenAI(base_url="http://127.0.0.1:8000/v1", api_key="none")
+resp = client.chat.completions.create(
+    model="local",
+    messages=[{"role": "user", "content": "write a python quicksort"}],
+)
+```
+
+## 注意事项
+
+- Colab 免费版会话最长约 12 小时，空闲会断开；模型/编译结果在 `/content` 缓存中，同一账号重开会话通常可复用
+- 显存不足（CUDA out of memory）：把 notebook 里 `QUANT` 改成 `Q3_K_S` 或把 `CTX` 降到 4096
+- 仅限合法用途
+
+## 目录结构
+
+```
+colab.ipynb          # Colab notebook（入口）
+scripts/
+  install.sh         # 编译安装 llama-cpp-python (CUDA)
+  download_model.py  # 下载 GGUF 量化模型
+  serve.sh           # 启动 OpenAI 兼容 API
+```
