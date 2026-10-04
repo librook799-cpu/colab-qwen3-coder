@@ -15,7 +15,7 @@
 
 ```bash
 cd colab-qwen3-coder
-git remote add origin https://github.com/<你的用户名>/<仓库名>.git
+git remote add origin https://github.com/librook799-cpu/colab-qwen3-coder.git
 git push -u origin main
 ```
 
@@ -24,7 +24,7 @@ git push -u origin main
 打开：
 
 ```
-https://colab.research.google.com/github/<你的用户名>/<仓库名>/blob/main/colab.ipynb
+https://colab.research.google.com/github/librook799-cpu/colab-qwen3-coder/blob/main/colab.ipynb
 ```
 
 按顺序运行 notebook 单元格：
