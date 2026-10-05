@@ -58,6 +58,9 @@ resp = client.chat.completions.create(
 
 ## 注意事项
 
+- 启动后立即请求会返回 503 `Loading model`：模型加载需要 30–60 秒，稍后重试
+- 首次生成请求因 CUDA 预热偏慢（预填可能 <1 t/s），第二次起正常，预期生成 40–80 t/s
+- 验证 GPU：`nvidia-smi` 应显示约 14GB 占用；若为 0，查看 `/content/server.log` 启动段
 - Colab 免费版会话最长约 12 小时，空闲会断开；模型和 llama-server 在 `/content` 缓存中，同一账号重开会话通常可复用
 - 显存不足（CUDA out of memory）：把 notebook 里 `QUANT` 改成 `Q3_K_S` 或把 `CTX` 降到 4096
 - 仅限合法用途
