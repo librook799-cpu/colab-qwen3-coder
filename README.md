@@ -7,15 +7,7 @@
 - 模型：`huihui-ai/Huihui-Qwen3-Coder-30B-A3B-Instruct-abliterated`（Qwen3-Coder 底座，abliterated 去除拒答）
 - GGUF 量化：`mradermacher/Huihui-Qwen3-Coder-30B-A3B-Instruct-abliterated-i1-GGUF`
 - 默认量化 `Q3_K_M`（约 14.7GB，适配 T4 16GB 显存）；OOM 时改 `Q3_K_S`（13.3GB）
-- 直链（浏览器/IDM/aria2 可提前下载）：
-  - Q3_K_M：`https://huggingface.co/mradermacher/Huihui-Qwen3-Coder-30B-A3B-Instruct-abliterated-i1-GGUF/resolve/main/Huihui-Qwen3-Coder-30B-A3B-Instruct-abliterated.i1-Q3_K_M.gguf`
-  - Q3_K_S：同上把文件名里 `Q3_K_M` 换成 `Q3_K_S`
 - 30B 总参 / 3B 激活（MoE），推理速度快
-
-## 模型免重复下载（Google Drive 缓存）
-
-1. 提前把 GGUF 放到 Google Drive 的 `我的云端硬盘/colab-models/`（文件名保持原样），或者跑 notebook 里的"备份模型到 Google Drive"单元格
-2. 之后每次新会话，④ 单元格会自动从 Drive 恢复（1–3 分钟），不再联网下载
 
 ## 使用步骤
 
