@@ -31,9 +31,9 @@ https://colab.research.google.com/github/librook799-cpu/colab-qwen3-coder/blob/m
 
 1. **配置**：填 `REPO_URL`，可改 `QUANT` / `CTX`
 2. **克隆代码**：从 GitHub 拉取本仓库
-3. **安装依赖**：编译 llama-cpp-python（CUDA 版，约 5–10 分钟，只需一次）
+3. **安装依赖**：下载官方预编译 `llama-server`（约 1–2 分钟，零编译）
 4. **下载模型**：从 HuggingFace 下载 GGUF（约 14GB，只下一次，之后会缓存）
-5. **启动 API 服务**：后台运行 `llama_cpp.server`
+5. **启动 API 服务**：后台运行 `llama-server`（OpenAI 兼容）
 6. **测试请求**：curl `/v1/chat/completions`
 7. **（可选）公网隧道**：cloudflared 暴露给外部访问
 
@@ -58,7 +58,7 @@ resp = client.chat.completions.create(
 
 ## 注意事项
 
-- Colab 免费版会话最长约 12 小时，空闲会断开；模型/编译结果在 `/content` 缓存中，同一账号重开会话通常可复用
+- Colab 免费版会话最长约 12 小时，空闲会断开；模型和 llama-server 在 `/content` 缓存中，同一账号重开会话通常可复用
 - 显存不足（CUDA out of memory）：把 notebook 里 `QUANT` 改成 `Q3_K_S` 或把 `CTX` 降到 4096
 - 仅限合法用途
 
@@ -67,7 +67,7 @@ resp = client.chat.completions.create(
 ```
 colab.ipynb          # Colab notebook（入口）
 scripts/
-  install.sh         # 编译安装 llama-cpp-python (CUDA)
+  install.sh         # 下载官方预编译 llama-server (CUDA)
   download_model.py  # 下载 GGUF 量化模型
   serve.sh           # 启动 OpenAI 兼容 API
 ```

@@ -1,36 +1,34 @@
 #!/usr/bin/env bash
-set -uo pipefail
+set -euo pipefail
 
-LOG=/content/build.log
-pip install -q ninja
-export CMAKE_ARGS="-DGGML_CUDA=on"
-export FORCE_CMAKE=1
+REL=b11401
+DEST=/content/llama
+BIN="$DEST/llama-server"
+: > /content/build.log
+exec > >(tee -a /content/build.log) 2>&1
+export LD_LIBRARY_PATH="/usr/local/cuda/lib64:${LD_LIBRARY_PATH:-}"
 
-: > "$LOG"
-START=$(date +%s)
-
-heartbeat() {
-  while :; do
-    EL=$(( $(date +%s) - START ))
-    PROG=$(tr '\r' '\n' < "$LOG" 2>/dev/null \
-      | grep -aE '\[ *[0-9]+/[0-9]+\]|\[ *[0-9]+%|Building wheel' \
-      | tail -n 1 | cut -c1-72)
-    printf '  [编译 %02d:%02d] %s\n' $((EL/60)) $((EL%60)) "${PROG:-依赖下载/cmake 配置中...}"
-    sleep 10
-  done
-}
-heartbeat & HB=$!
-trap 'kill "$HB" 2>/dev/null' EXIT
-
-pip install -v -U "llama-cpp-python[server]" --no-cache-dir 2>&1 | tee "$LOG"
-RC=${PIPESTATUS[0]}
-
-kill "$HB" 2>/dev/null
-EL=$(( $(date +%s) - START ))
-if [ "$RC" -eq 0 ]; then
-  printf '安装完成，用时 %02d:%02d\n' $((EL/60)) $((EL%60))
-else
-  printf '安装失败 (exit=%d)，日志末尾：\n' "$RC"
-  tail -n 30 "$LOG"
-  exit "$RC"
+if [ -x "$BIN" ] && "$BIN" --version >/dev/null 2>&1; then
+  echo "llama-server 已安装，跳过下载"
+  "$BIN" --version | head -2
+  exit 0
 fi
+
+echo "[1/3] 下载官方预编译 llama-server b11401 (164MB，约 1 分钟)..."
+curl -fL --retry 3 -o /tmp/llama.tar.gz \
+  "https://github.com/ggml-org/llama.cpp/releases/download/$REL/llama-$REL-bin-ubuntu-cuda-12.8-x64.tar.gz"
+mkdir -p "$DEST"
+tar -xzf /tmp/llama.tar.gz -C "$DEST" --strip-components=1
+chmod +x "$BIN"
+
+if ! "$BIN" --version >/dev/null 2>&1; then
+  echo "[2/3] 系统 CUDA 库不匹配，改用自带运行库版 (594MB)..."
+  curl -fL --retry 3 -o /tmp/llama-cudart.tar.gz \
+    "https://github.com/ggml-org/llama.cpp/releases/download/$REL/cudart-llama-$REL-bin-ubuntu-cuda-12.8-x64.tar.gz"
+  tar -xzf /tmp/llama-cudart.tar.gz -C "$DEST" --strip-components=1
+  chmod +x "$BIN"
+fi
+
+echo "[3/3] 校验："
+"$BIN" --version
+echo "安装完成"
