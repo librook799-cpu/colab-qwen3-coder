@@ -9,22 +9,31 @@ exec > >(tee -a /content/build.log) 2>&1
 
 nv_lib_path() {
   python3 -c "
-import glob, os, sysconfig
+import glob, os
+subs = ('cuda_runtime', 'cublas', 'nvjitlink')
 ps = []
 try:
     import nvidia
-    ps += glob.glob(os.path.join(os.path.dirname(nvidia.__file__), '*', 'lib'))
+    base = os.path.dirname(nvidia.__file__)
+    for s in subs:
+        ps += glob.glob(os.path.join(base, s, 'lib'))
 except Exception:
     pass
-try:
-    ps += glob.glob(os.path.join(sysconfig.get_paths().get('purelib', ''), 'nvidia', '*', 'lib'))
-except Exception:
-    pass
-ps += glob.glob('/usr/local/lib/python*/dist-packages/nvidia/*/lib')
+for s in subs:
+    ps += glob.glob('/usr/local/lib/python*/dist-packages/nvidia/%s/lib' % s)
 print(':'.join(dict.fromkeys(os.path.abspath(p) for p in ps)))
 "
 }
-export LD_LIBRARY_PATH="/usr/lib64-nvidia:$(nv_lib_path):/usr/local/cuda/lib64:/usr/local/cuda-13.0/targets/x86_64-linux/lib:${LD_LIBRARY_PATH:-}"
+
+libcuda_dir() {
+  local f
+  f=$(find /usr/lib64-nvidia /usr/lib/x86_64-linux-gnu /usr/lib /lib \
+        -maxdepth 3 -name 'libcuda.so.1*' \
+        -not -path '*stubs*' -not -path '*dist-packages*' 2>/dev/null | head -1)
+  if [ -n "$f" ]; then dirname "$f"; fi
+}
+
+export LD_LIBRARY_PATH="$(libcuda_dir):$(nv_lib_path):/usr/local/cuda/lib64:/usr/local/cuda-13.0/targets/x86_64-linux/lib:${LD_LIBRARY_PATH:-}"
 
 if [ -x "$BIN" ] && "$BIN" --version >/dev/null 2>&1; then
   echo "llama-server 已存在，跳过下载"
@@ -39,9 +48,10 @@ fi
 
 echo "[2/3] 安装 CUDA 12 运行库 (libcudart/libcublas/libnvjitlink，约 450MB)..."
 pip install -q nvidia-cuda-runtime-cu12 nvidia-cublas-cu12 nvidia-nvjitlink-cu12
-export LD_LIBRARY_PATH="/usr/lib64-nvidia:$(nv_lib_path):/usr/local/cuda/lib64:${LD_LIBRARY_PATH:-}"
+export LD_LIBRARY_PATH="$(libcuda_dir):$(nv_lib_path):/usr/local/cuda/lib64:${LD_LIBRARY_PATH:-}"
 
 echo "[3/3] 校验："
+echo "libcuda 定位: $(ldd "$DEST/libggml-cuda.so" | grep libcuda || true)"
 if ldd "$DEST/libggml-cuda.so" | grep 'not found'; then
   echo "错误：CUDA 库仍有缺失（见上）"
   exit 1

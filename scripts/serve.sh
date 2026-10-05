@@ -6,21 +6,25 @@ set -euo pipefail
 : "${CTX:=8192}"
 
 NV_LIBS=$(python3 -c "
-import glob, os, sysconfig
+import glob, os
+subs = ('cuda_runtime', 'cublas', 'nvjitlink')
 ps = []
 try:
     import nvidia
-    ps += glob.glob(os.path.join(os.path.dirname(nvidia.__file__), '*', 'lib'))
+    base = os.path.dirname(nvidia.__file__)
+    for s in subs:
+        ps += glob.glob(os.path.join(base, s, 'lib'))
 except Exception:
     pass
-try:
-    ps += glob.glob(os.path.join(sysconfig.get_paths().get('purelib', ''), 'nvidia', '*', 'lib'))
-except Exception:
-    pass
-ps += glob.glob('/usr/local/lib/python*/dist-packages/nvidia/*/lib')
+for s in subs:
+    ps += glob.glob('/usr/local/lib/python*/dist-packages/nvidia/%s/lib' % s)
 print(':'.join(dict.fromkeys(os.path.abspath(p) for p in ps)))
 ")
-export LD_LIBRARY_PATH="/usr/lib64-nvidia:${NV_LIBS}:/usr/local/cuda/lib64:/usr/local/cuda-13.0/targets/x86_64-linux/lib:${LD_LIBRARY_PATH:-}"
+
+LIBCUDA_DIR=$(find /usr/lib64-nvidia /usr/lib/x86_64-linux-gnu /usr/lib /lib \
+  -maxdepth 3 -name 'libcuda.so.1*' -not -path '*stubs*' -not -path '*dist-packages*' 2>/dev/null | head -1 | xargs -r dirname)
+
+export LD_LIBRARY_PATH="${LIBCUDA_DIR}:${NV_LIBS}:/usr/local/cuda/lib64:/usr/local/cuda-13.0/targets/x86_64-linux/lib:${LD_LIBRARY_PATH:-}"
 
 exec /content/llama/llama-server \
   -m "$MODEL_PATH" \
