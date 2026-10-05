@@ -36,6 +36,7 @@ https://colab.research.google.com/github/librook799-cpu/colab-qwen3-coder/blob/m
 5. **启动 API 服务**：后台运行 `llama-server`（OpenAI 兼容）
 6. **测试请求**：curl `/v1/chat/completions`
 7. **（可选）公网隧道**：cloudflared 暴露给外部访问
+8. **保活**：服务起来后跑保活单元格，防止 Colab 闲置回收（最长 12 小时强制断开）
 
 ### 3. 调用 API
 
