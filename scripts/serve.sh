@@ -20,7 +20,7 @@ except Exception:
 ps += glob.glob('/usr/local/lib/python*/dist-packages/nvidia/*/lib')
 print(':'.join(dict.fromkeys(os.path.abspath(p) for p in ps)))
 ")
-export LD_LIBRARY_PATH="${NV_LIBS}:/usr/local/cuda/lib64:/usr/local/cuda-13.0/targets/x86_64-linux/lib:${LD_LIBRARY_PATH:-}"
+export LD_LIBRARY_PATH="/usr/lib64-nvidia:${NV_LIBS}:/usr/local/cuda/lib64:/usr/local/cuda-13.0/targets/x86_64-linux/lib:${LD_LIBRARY_PATH:-}"
 
 exec /content/llama/llama-server \
   -m "$MODEL_PATH" \
